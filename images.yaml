@@ -1,0 +1,5 @@
+docker.io:
+- nginx:1.20.1
+- nginx:1.20.2
+registry.k8s.io:
+- sig-storage/nfsplugin:v4.2.0
