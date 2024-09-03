@@ -1,0 +1,49 @@
+name: Auto Sync Images to ACR
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天 UTC 时间 00:00 运行
+
+jobs:
+  sync-images:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Install yq
+        run: |
+          sudo apt-get update && sudo apt-get install -y jq
+          wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq
+          chmod +x /usr/bin/yq
+
+      - name: Login to Aliyun ACR
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ secrets.ALIYUN_REGISTRY_URL }}
+          username: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
+          password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
+
+      - name: Read YAML and Sync Images
+        run: |
+          IMAGES_FILE="images.yml"
+          REGISTRIES=$(yq e '. | keys' $IMAGES_FILE | sed 's/- //g')
+          for REGISTRY in $REGISTRIES; do
+            IMAGES=$(yq e ".\"$REGISTRY\"[]" $IMAGES_FILE)
+            for IMAGE in $IMAGES; do
+              LATEST_TAG=$(curl -s "https://$REGISTRY/v2/$IMAGE/tags/list" | jq -r '.tags | sort | last')
+              SOURCE_IMAGE="$REGISTRY/$IMAGE:$LATEST_TAG"
+              TARGET_IMAGE="${{ secrets.ALIYUN_REGISTRY_URL }}/sync-$REGISTRY/$IMAGE:$LATEST_TAG"
+              echo "Pulling $SOURCE_IMAGE"
+              docker pull $SOURCE_IMAGE
+              echo "Tagging $SOURCE_IMAGE as $TARGET_IMAGE"
+              docker tag $SOURCE_IMAGE $TARGET_IMAGE
+              echo "Pushing $TARGET_IMAGE"
+              docker push $TARGET_IMAGE
+            done
+          done
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
