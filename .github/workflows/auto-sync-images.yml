@@ -1,7 +1,6 @@
 name: Auto Sync Images to ACR
 
 on:
-  workflow_dispatch:
   push:
     branches: [ main ]
 
@@ -22,29 +21,39 @@ jobs:
           username: ${{ secrets.ALIYUN_REGISTRY_USERNAME }}
           password: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
 
-      - name: Read YAML and Sync Images
+      - name: Sync Docker images
         run: |
-          IMAGES_FILE="images.yml"
-          while IFS= read -r line; do
-            if [[ $line == *":" ]]; then
-              REGISTRY=$(echo $line | sed 's/://')
-            elif [[ $line == *"- "* ]]; then
-              IMAGE=$(echo $line | sed 's/- //')
-              echo "Processing $REGISTRY/$IMAGE"
+          # 文件路径
+          IMAGE_FILE="images.yaml"
 
-              SOURCE_IMAGE="$REGISTRY/$IMAGE"
-              TARGET_IMAGE="${{ secrets.ALIYUN_REGISTRY_URL }}/${{ secrets.ALIYUN_NAMESPACE }}/$IMAGE"
-              
-              echo "Pulling $SOURCE_IMAGE"
-              docker pull $SOURCE_IMAGE
-              
-              echo "Tagging $SOURCE_IMAGE as $TARGET_IMAGE"
-              docker tag $SOURCE_IMAGE $TARGET_IMAGE
-              
-              echo "Pushing $TARGET_IMAGE"
-              docker push $TARGET_IMAGE
+          # 读取文件并处理
+          while IFS= read -r line
+          do
+            # 跳过注释行和空行
+            [[ "$line" =~ ^#.* ]] || [[ -z "$line" ]] && continue
+
+            # 检测并处理 Docker 注册表标识符
+            if [[ "$line" =~ ^(docker.io:|registry.k8s.io:)$ ]]; then
+              REPO_PREFIX=${line%%:}
+              continue
             fi
-          done < $IMAGES_FILE
-        env:
-          DOCKER_CLI_EXPERIMENTAL: enabled
+
+            # 处理镜像条目
+            if [[ "$line" =~ ^- ]]; then
+              IMAGE_NAME=${line#- }
+              IMAGE_NAME=${IMAGE_NAME// /}
+
+              SOURCE_IMAGE="${REPO_PREFIX}/${IMAGE_NAME}"
+              TARGET_IMAGE="${{ secrets.ALIYUN_REGISTRY_URL }}/${{ secrets.ALIYUN_NAMESPACE }}/$IMAGE"
+
+              # 拉取镜像
+              docker pull "${SOURCE_IMAGE}"
+
+              # 标记镜像
+              docker tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}"
+
+              # 推送镜像
+              docker push "${TARGET_IMAGE}"
+            fi
+          done < "${IMAGE_FILE}"
 
