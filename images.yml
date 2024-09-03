@@ -1,12 +1,2 @@
-docker.elastic.com:
-  - elasticsearch/elasticsearch
-  - kibana/kibana
-  - logstash/logstash
-  - beats/filebeat
-  - beats/heartbeat
-  - beats/packetbeat
-  - beats/auditbeat
-  - beats/journalbeat
-  - beats/metricbeat
-  - apm/apm-server
-  - app-search/app-search
+docker.io:
+  - elasticsearch
