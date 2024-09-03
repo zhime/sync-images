@@ -1,9 +1,10 @@
 name: Auto Sync Images to ACR
 
 on:
-  schedule:
-    - cron: '0 0 * * *'  # 每天 UTC 时间 00:00 运行
-
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    
 jobs:
   sync-images:
     runs-on: ubuntu-latest
