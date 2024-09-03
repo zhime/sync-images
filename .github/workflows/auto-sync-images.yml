@@ -57,3 +57,6 @@ jobs:
             fi
           done < "${IMAGE_FILE}"
 
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+
