@@ -1,4 +1,4 @@
-name: Auto Sync Images to ACR
+name: Sync Images to ACR
 
 on:
   push:
@@ -41,6 +41,7 @@ jobs:
             # 处理镜像条目
             if [[ "$line" =~ ^- ]]; then
               IMAGE_NAME=${line#- }
+              IMAGE_NAME=${IMAGE_NAME// /}
 
               SOURCE_IMAGE="${REPO_PREFIX}/${IMAGE_NAME}"
               TARGET_IMAGE="${{ secrets.ALIYUN_REGISTRY_URL }}/${{ secrets.ALIYUN_NAMESPACE }}/${IMAGE_NAME#*/}"
