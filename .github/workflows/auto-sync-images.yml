@@ -31,18 +31,9 @@ jobs:
             elif [[ $line == *"- "* ]]; then
               IMAGE=$(echo $line | sed 's/- //')
               echo "Processing $REGISTRY/$IMAGE"
-              
-              # 获取最新的标签
-              TAG_URL="https://$REGISTRY/v2/$IMAGE/tags/list"
-              LATEST_TAG=$(curl -s $TAG_URL | grep -oP '(?<="name":")[^"]+' | sort -rV | head -n 1)
-              
-              if [[ -z "$LATEST_TAG" ]]; then
-                echo "No tags found for $REGISTRY/$IMAGE, skipping..."
-                continue
-              fi
 
-              SOURCE_IMAGE="$REGISTRY/$IMAGE:$LATEST_TAG"
-              TARGET_IMAGE="${{ secrets.ALIYUN_REGISTRY_URL }}/${{ secrets.ALIYUN_NAMESPACE }}/$IMAGE:$LATEST_TAG"
+              SOURCE_IMAGE="$REGISTRY/$IMAGE"
+              TARGET_IMAGE="${{ secrets.ALIYUN_REGISTRY_URL }}/${{ secrets.ALIYUN_NAMESPACE }}/$IMAGE"
               
               echo "Pulling $SOURCE_IMAGE"
               docker pull $SOURCE_IMAGE
