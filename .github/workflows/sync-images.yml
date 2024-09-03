@@ -47,16 +47,21 @@ jobs:
               TARGET_IMAGE="${{ secrets.ALIYUN_REGISTRY_URL }}/${{ secrets.ALIYUN_NAMESPACE }}/${IMAGE_NAME#*/}"
 
               # 拉取镜像
+              echo "Pulling image: ${SOURCE_IMAGE}"
               docker pull "${SOURCE_IMAGE}"
 
               # 标记镜像
+              echo "Tagging image: ${SOURCE_IMAGE} -> ${TARGET_IMAGE}"
               docker tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}"
 
               # 推送镜像
+              echo "Pushing image: ${TARGET_IMAGE}"
               docker push "${TARGET_IMAGE}"
             fi
           done < "${IMAGE_FILE}"
-
+        
+      - name: Clean up
+        run: echo "Cleanup complete"
         env:
           DOCKER_CLI_EXPERIMENTAL: enabled
 
