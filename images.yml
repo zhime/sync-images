@@ -1,4 +1,4 @@
-docker.elastic.co:
+docker.elastic.com:
   - elasticsearch/elasticsearch
   - kibana/kibana
   - logstash/logstash
